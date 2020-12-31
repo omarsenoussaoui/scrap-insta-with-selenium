@@ -1,26 +1,47 @@
 from selenium import webdriver
+import time
+import urllib.request
+driver=webdriver.Chrome()
+driver.get('https://www.instagram.com/judo_top_video_/')
+lenOfPage = driver.execute_script("window.scrollTo(0, document.body.scrollHeight);"
+                                  "var lenOfPage=document.body.scrollHeight;"
+                                  "return lenOfPage;")
+#print("1 = ",lenOfPage)
+match=False
+x=2
+while(match==False):
+    lastCount = lenOfPage
+    time.sleep(5)
+    lenOfPage = driver.execute_script(
+        "window.scrollTo(0, document.body.scrollHeight);"
+        "var lenOfPage=document.body.scrollHeight;"
+        "return lenOfPage;")
+    #print(x,"=",lenOfPage)
+    #print(lenOfPage-lastCount)
+    #x=x+1
+    if lastCount==lenOfPage:
+     #   print("lastCount = lenofpage = ",lastCount)
+        match=True
 
-url="https://www.youtube.com/channel/UC8tgRQ7DOzAbn9L7zDL8mLg/videos"
-driver = webdriver.Chrome()
-driver.implicitly_wait(30)
-driver.maximize_window()
-driver.get(url)
-videos = driver.find_elements_by_class_name("style-scope ytd-grid-video-renderer")
+posts=[]
+post_link = driver.find_elements_by_tag_name('a')
+# this block get the links of the postes
+for link in post_link:
+    post = link.get_attribute('href')
+    if '/p/' in post: #/p/====> c-a-d poste all posts in insta contain this /p/
+        posts.append( post )
+#print(posts)
 
-videos_list=[]
-for video in videos:
-    title = video.find_element_by_xpath('.//*[@id="video-title"]').text
-    link = video.find_element_by_xpath('.//*[@id="video-title"]').get_attribute("href")
-    views = video.find_element_by_xpath('.//*[@id="metadata-line"]/span[1]').text
-    when = video.find_element_by_xpath('.//*[@id="metadata-line"]/span[2]').text
-    video_items={
-        'title': title,
-        'link': link,
-        'views': views,
-        'post_time': when
-    }
-    videos_list.append(video_items)
-
-for x in range(len(videos_list)):
-    print(videos_list[x])
-
+download_url=''
+for post in posts:
+    driver.get(post)
+    short_code=driver.current_url.split("/")[-2] #get the url of this current page
+     #get the code after /p/ like CIeIUm5hiBU in https://www.instagram.com/p/CIeIUm5hiBU/
+    type = driver.find_element_by_xpath('//meta[@property="og:type"]').get_attribute('content')
+    if type== 'video':
+        download_url=driver.find_element_by_xpath('//meta[@property="og:video"]').get_attribute('content')
+        urllib.request.urlretrieve(download_url,'{}.mp4'.format(short_code))
+    else:
+        download_url=driver.find_element_by_xpath('//meta[@property="og:image"]').get_attribute('content')
+        urllib.request.urlretrieve(download_url, '{}.jpg'.format(short_code))
+    print(download_url)
